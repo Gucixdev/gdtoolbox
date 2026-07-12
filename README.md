@@ -45,10 +45,14 @@ auto-discovery mechanism — some are the author's own, several are third-party
   [0 = static/background, 1 = moves with the camera 1:1, in between/above
   for depth]. Auto-detects whichever camera — 2D or 3D — is active in the
   viewport and offsets each layer from its starting position accordingly)
-  and **EzEquipment** (generic
+  **EzEquipment** (generic
   equipment-slot node: named slots holding arbitrary `Resource` items,
   `equip`/`unequip`/`get_equipped`, `equipped`/`unequipped` signals — not
-  game-specific, just a slot manager).
+  game-specific, just a slot manager), and **EzInventory** (generic hotbar:
+  slot count is `backpack_level * 3` [lvl1=3, lvl2=6, lvl3=9, scales linearly
+  beyond that], `select_next`/`select_prev` cycle the active slot with
+  wraparound for a Minecraft-style scroll-to-select hotbar — items are plain
+  `Resource`s, no shape assumed).
 - **godot_mcp_server** — WebSocket bridge exposing the editor (scene tree,
   properties, project settings, console/errors, running scenes) to an MCP
   client, with a locally-generated auth secret per session.
