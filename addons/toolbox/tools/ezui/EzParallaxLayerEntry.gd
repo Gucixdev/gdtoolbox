@@ -1,16 +1,14 @@
 extends Resource
 class_name EzParallaxLayerEntry
 
-## Jedna warstwa dla EzParallaxBg — tekstura + jak szybko przewija się
-## względem kamery.
+## Jedna warstwa dla EzParallaxBg. `target` wskazuje na DOWOLNY child node
+## EzParallaxBg — Sprite2D, MeshInstance3D, cały poddrzewo, cokolwiek. Ten
+## resource nie trzyma tekstury ani nie tworzy niczego samodzielnie, tylko
+## mówi "ten node ma się przesuwać z tą siłą".
 
-@export var texture: Texture2D
-## X < 1 = wolniej niż kamera (dalszy plan), X = 1 = rusza się z kamerą 1:1,
-## X > 1 = szybciej (bliższy plan). Typowo Y zostaje 1.0 (bez przewijania w
-## pionie) chyba że robisz też pionowy parallax.
-@export var scroll_scale: Vector2 = Vector2(0.5, 1.0)
-@export var z_index: int = 0
-## Powiela teksturę w poziomie o jej własną szerokość (ParallaxLayer.motion_mirroring)
-## — bez szwu przy przewijaniu w nieskończoność. Wyłącz dla warstw skończonych
-## (np. sylwetka gór w tle, która nie ma się powtarzać).
-@export var mirror_horizontally: bool = true
+@export var target: NodePath
+## Jak mocno warstwa reaguje na ruch kamery: 0 = nieruchoma (daleki plan),
+## 1 = rusza się z kamerą 1:1, <1 wolniej (dalej), >1 szybciej (bliżej).
+## Jedna liczba działa i dla Node2D (Vector2 * float), i dla Node3D
+## (Vector3 * float).
+@export var shift: float = 0.5

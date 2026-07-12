@@ -1,44 +1,55 @@
 @tool
 class_name EzParallaxBg
-extends Node2D
+extends Node
 
-## Wielowarstwowe przewijane tło dla platformówek 2D (i topdown) — zamiast
-## ręcznie stawiać Parallax2D + Sprite2D na każdą warstwę i osobno ustawiać
-## scroll_scale/repeat_size, wypełniasz JEDNĄ tablicę `layers` (tekstura +
-## prędkość przewijania, patrz EzParallaxLayerEntry.gd) w Inspektorze — node
-## buduje Parallax2D/Sprite2D dzieci sam.
-##
-## Bazuje na Parallax2D (następca przestarzałego ParallaxBackground/
-## ParallaxLayer w Godocie 4) — silnik i tak robi przewijanie poprawnie, to
-## tylko wygodniejszy sposób ustawienia wielu warstw naraz.
+## Generyczny parallax — działa i w 2D, i w 3D, bo sam nie tworzy żadnej
+## geometrii/sprite'ów. Dodajesz WŁASNE dzieci (Sprite2D, MeshInstance3D,
+## całe poddrzewa, cokolwiek) normalnie w edytorze, a w `layers` wskazujesz
+## który child (przez EzParallaxLayerEntry.target) ma jak mocno (`shift`)
+## reagować na ruch kamery. Node sam wykrywa aktywną kamerę (2D albo 3D,
+## cokolwiek akurat jest w viewport) i przesuwa każdą warstwę względem jej
+## pozycji STARTOWEJ — nie mieszaj warstw 2D i 3D pod jednym EzParallaxBg,
+## bo kamera jest jedna na scenę.
 
-@export var layers: Array[EzParallaxLayerEntry] = []:
-	set(v):
-		layers = v
-		_rebuild()
+@export var layers: Array[EzParallaxLayerEntry] = []
+
+var _base_positions: Dictionary = {}  # Node -> pozycja startowa (Vector2 albo Vector3)
+var _base_cam_pos = null  # typ dopasowuje się do pierwszej znalezionej kamery
 
 func _ready() -> void:
-	_rebuild()
+	_base_positions.clear()
+	_base_cam_pos = null
+	for entry in layers:
+		if entry == null:
+			continue
+		var node := get_node_or_null(entry.target)
+		if node:
+			_base_positions[node] = node.position
 
-func _rebuild() -> void:
-	if not is_inside_tree():
+func _process(_delta: float) -> void:
+	var cam_pos = _get_camera_position()
+	if cam_pos == null:
 		return
-	for c in get_children():
-		remove_child(c)
-		c.queue_free()
+	if _base_cam_pos == null:
+		_base_cam_pos = cam_pos
+	var cam_delta = cam_pos - _base_cam_pos
 
 	for entry in layers:
-		if entry == null or entry.texture == null:
+		if entry == null:
 			continue
-		var layer := Parallax2D.new()
-		layer.scroll_scale = entry.scroll_scale
-		if entry.mirror_horizontally:
-			layer.repeat_size = Vector2(entry.texture.get_width(), 0.0)
-			layer.repeat_times = 2
-		add_child(layer)
+		var node := get_node_or_null(entry.target)
+		if node == null or not _base_positions.has(node):
+			continue
+		node.position = _base_positions[node] + cam_delta * entry.shift
 
-		var sprite := Sprite2D.new()
-		sprite.texture = entry.texture
-		sprite.centered = false
-		sprite.z_index = entry.z_index
-		layer.add_child(sprite)
+func _get_camera_position():
+	var vp := get_viewport()
+	if vp == null:
+		return null
+	var cam2d := vp.get_camera_2d()
+	if cam2d:
+		return cam2d.global_position
+	var cam3d := vp.get_camera_3d()
+	if cam3d:
+		return cam3d.global_position
+	return null

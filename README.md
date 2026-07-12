@@ -38,12 +38,14 @@ auto-discovery mechanism — some are the author's own, several are third-party
 - **ezui** — NinePatch-based custom controls (panel, button, bar) plus a
   grab-bag of small reusable nodes merged in from the old `ui_tools`: radial
   menu, 3D progress bar, collapsible container/panel, UI anim, and now
-  **EzParallaxBg** (multi-layer scrolling background for 2D platformers —
-  fill in an array of `EzParallaxLayerEntry` [texture + scroll speed], it
-  builds the `Parallax2D`/`Sprite2D` children and sets
-  `scroll_scale`/`repeat_size` for you; built on Godot's own `Parallax2D`,
-  not a reimplementation — not the deprecated `ParallaxBackground`/
-  `ParallaxLayer`) and **EzEquipment** (generic
+  **EzParallaxBg** (generic parallax — works for 2D or 3D, since it doesn't
+  create any geometry itself: add your own children — `Sprite2D`,
+  `MeshInstance3D`, whole subtrees, anything — then in `layers` point an
+  `EzParallaxLayerEntry` at each child's `NodePath` with a `shift` float
+  [0 = static/background, 1 = moves with the camera 1:1, in between/above
+  for depth]. Auto-detects whichever camera — 2D or 3D — is active in the
+  viewport and offsets each layer from its starting position accordingly)
+  and **EzEquipment** (generic
   equipment-slot node: named slots holding arbitrary `Resource` items,
   `equip`/`unequip`/`get_equipped`, `equipped`/`unequipped` signals — not
   game-specific, just a slot manager).
