@@ -1,0 +1,30 @@
+{
+  "nodes": {
+    "start": {
+      "speaker": "Strażnik",
+      "text": "Stój! Kto idzie?",
+      "next": "choice"
+    },
+    "choice": {
+      "choices": [
+        { "text": "Podróżnik z południa.", "next": "ok" },
+        { "text": "Kup miecz (wymaga złota).", "next": "buy", "requires": { "has_gold": true } },
+        { "text": "Zmykaj!", "next": "bye" }
+      ]
+    },
+    "ok": {
+      "speaker": "Strażnik",
+      "text": "Możesz przejść. Uważaj na siebie.",
+      "next": null
+    },
+    "buy": {
+      "events": ["give_item:sword", "remove_gold:50"],
+      "next": "ok"
+    },
+    "bye": {
+      "speaker": "Strażnik",
+      "text": "Nie wracaj.",
+      "next": null
+    }
+  }
+}

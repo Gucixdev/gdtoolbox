@@ -1,0 +1,32 @@
+{
+  "nodes": {
+    "start": {
+      "speaker": "NPC",
+      "text": "Cześć! Co u ciebie słychać?",
+      "next": "q1"
+    },
+    "q1": {
+      "text": "Co chcesz zrobić?",
+      "choices": [
+        { "text": "Handel (potrzebujesz złota)",  "next": "trade",  "requires": { "has_gold": true } },
+        { "text": "Przyjmij zadanie",              "next": "quest"                                    },
+        { "text": "Do widzenia",                   "next": null                                       }
+      ]
+    },
+    "trade": {
+      "speaker": "NPC",
+      "text": "Umowa stoi!",
+      "events": ["give_item:sword", "remove_flag:has_gold"],
+      "next": null
+    },
+    "quest": {
+      "events": ["quest_start:main_quest"],
+      "next": "quest_confirm"
+    },
+    "quest_confirm": {
+      "speaker": "NPC",
+      "text": "Świetnie! Przyniesienie mi ten przedmiot.",
+      "next": null
+    }
+  }
+}
