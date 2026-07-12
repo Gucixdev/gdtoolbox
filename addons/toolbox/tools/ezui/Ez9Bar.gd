@@ -2,13 +2,15 @@
 class_name Ez9Bar
 extends Ez9Control
 
-## Pasek postępu. Fill renderuje zawsze w pełnym rozmiarze i jest przycinany
+## Pasek postępu. Fill używa TEJ SAMEJ tekstury co tło (self.texture) — jedna
+## grafika wystarczy, fill_color/modulate odróżnia fill od tła kolorem (dawniej
+## był osobny fill_texture/bar_fill.png, zbędne skoro to i tak ten sam kształt
+## nine-patch). Fill renderuje zawsze w pełnym rozmiarze i jest przycinany
 ## przez clip container — brak zniekształceń NinePatch przy małych wartościach.
 
 signal value_changed(v: float)
 
-const _D_BG   := "res://addons/toolbox/tools/ezui/assets/bar_bg.png"
-const _D_FILL := "res://addons/toolbox/tools/ezui/assets/bar_fill.png"
+const _D_BG := "res://addons/toolbox/tools/ezui/assets/bar_bg.png"
 
 @export_group("Fill")
 @export_range(0.0, 1.0) var value: float = 1.0:
@@ -20,17 +22,11 @@ const _D_FILL := "res://addons/toolbox/tools/ezui/assets/bar_fill.png"
 @export var fill_color: Color = Color.WHITE:
 	set(v): fill_color = v; _refresh_fill()
 
-@export var fill_texture: Texture2D:
-	set(v): fill_texture = v; if is_node_ready(): _rebuild_fill()
-
-@export var fill_patch_margin: int = 10:
-	set(v): fill_patch_margin = v; if is_node_ready(): _rebuild_fill()
-
 @export_enum("Left→Right", "Right→Left", "Bottom→Top", "Top→Bottom") var fill_direction: int = 0:
 	set(v): fill_direction = v; _refresh_fill()
 
 var _clip: Control
-var _fill: Control
+var _fill: NinePatchRect
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -40,8 +36,6 @@ func _ready() -> void:
 		patch_margin_right  = 10
 		patch_margin_top    = 10
 		patch_margin_bottom = 10
-	if not fill_texture and ResourceLoader.exists(_D_FILL):
-		fill_texture = load(_D_FILL)
 	mouse_filter = MOUSE_FILTER_IGNORE
 	_rebuild_fill()
 	resized.connect(_refresh_fill)
@@ -57,29 +51,21 @@ func _rebuild_fill() -> void:
 	_clip.mouse_filter = MOUSE_FILTER_IGNORE
 	add_child(_clip, false, Node.INTERNAL_MODE_FRONT)
 
-	if fill_texture:
-		var np := NinePatchRect.new()
-		np.texture = fill_texture
-		np.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		np.patch_margin_left   = fill_patch_margin
-		np.patch_margin_right  = fill_patch_margin
-		np.patch_margin_top    = fill_patch_margin
-		np.patch_margin_bottom = fill_patch_margin
-		_fill = np
-	else:
-		_fill = ColorRect.new()
-
+	_fill = NinePatchRect.new()
 	_fill.name = "_fill"
+	_fill.texture = texture
+	_fill.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	_fill.patch_margin_left   = patch_margin_left
+	_fill.patch_margin_right  = patch_margin_right
+	_fill.patch_margin_top    = patch_margin_top
+	_fill.patch_margin_bottom = patch_margin_bottom
 	_fill.mouse_filter = MOUSE_FILTER_IGNORE
 	_clip.add_child(_fill)
 	_refresh_fill()
 
 func _refresh_fill() -> void:
 	if not is_instance_valid(_clip) or not is_instance_valid(_fill): return
-	if _fill is ColorRect:
-		(_fill as ColorRect).color = fill_color
-	else:
-		_fill.modulate = fill_color
+	_fill.modulate = fill_color
 
 	var w := size.x
 	var h := size.y
