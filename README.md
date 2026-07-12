@@ -40,9 +40,10 @@ auto-discovery mechanism — some are the author's own, several are third-party
   menu, 3D progress bar, collapsible container/panel, UI anim, and now
   **EzParallaxBg** (multi-layer scrolling background for 2D platformers —
   fill in an array of `EzParallaxLayerEntry` [texture + scroll speed], it
-  builds the `ParallaxLayer`/`Sprite2D` children and sets
-  `motion_scale`/`motion_mirroring` for you; built on Godot's own
-  `ParallaxBackground`, not a reimplementation) and **EzEquipment** (generic
+  builds the `Parallax2D`/`Sprite2D` children and sets
+  `scroll_scale`/`repeat_size` for you; built on Godot's own `Parallax2D`,
+  not a reimplementation — not the deprecated `ParallaxBackground`/
+  `ParallaxLayer`) and **EzEquipment** (generic
   equipment-slot node: named slots holding arbitrary `Resource` items,
   `equip`/`unequip`/`get_equipped`, `equipped`/`unequipped` signals — not
   game-specific, just a slot manager).

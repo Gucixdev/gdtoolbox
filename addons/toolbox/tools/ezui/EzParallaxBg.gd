@@ -1,16 +1,16 @@
 @tool
 class_name EzParallaxBg
-extends ParallaxBackground
+extends Node2D
 
 ## Wielowarstwowe przewijane tło dla platformówek 2D (i topdown) — zamiast
-## ręcznie stawiać ParallaxLayer + Sprite2D na każdą warstwę i osobno ustawiać
-## motion_scale/motion_mirroring, wypełniasz JEDNĄ tablicę `layers`
-## (tekstura + prędkość przewijania, patrz EzParallaxLayerEntry.gd) w
-## Inspektorze — node buduje ParallaxLayer/Sprite2D dzieci sam.
+## ręcznie stawiać Parallax2D + Sprite2D na każdą warstwę i osobno ustawiać
+## scroll_scale/repeat_size, wypełniasz JEDNĄ tablicę `layers` (tekstura +
+## prędkość przewijania, patrz EzParallaxLayerEntry.gd) w Inspektorze — node
+## buduje Parallax2D/Sprite2D dzieci sam.
 ##
-## Bazuje na wbudowanym w Godota ParallaxBackground/ParallaxLayer (nie własna
-## implementacja przewijania za kamerą) — silnik i tak robi to poprawnie,
-## to tylko wygodniejszy sposób ustawienia wielu warstw naraz.
+## Bazuje na Parallax2D (następca przestarzałego ParallaxBackground/
+## ParallaxLayer w Godocie 4) — silnik i tak robi przewijanie poprawnie, to
+## tylko wygodniejszy sposób ustawienia wielu warstw naraz.
 
 @export var layers: Array[EzParallaxLayerEntry] = []:
 	set(v):
@@ -30,10 +30,11 @@ func _rebuild() -> void:
 	for entry in layers:
 		if entry == null or entry.texture == null:
 			continue
-		var layer := ParallaxLayer.new()
-		layer.motion_scale = entry.scroll_scale
+		var layer := Parallax2D.new()
+		layer.scroll_scale = entry.scroll_scale
 		if entry.mirror_horizontally:
-			layer.motion_mirroring = Vector2(entry.texture.get_width(), 0.0)
+			layer.repeat_size = Vector2(entry.texture.get_width(), 0.0)
+			layer.repeat_times = 2
 		add_child(layer)
 
 		var sprite := Sprite2D.new()
