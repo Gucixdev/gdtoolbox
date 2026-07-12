@@ -38,12 +38,14 @@ auto-discovery mechanism — some are the author's own, several are third-party
 - **ezui** — NinePatch-based custom controls (panel, button, bar) plus a
   grab-bag of small reusable nodes merged in from the old `ui_tools`: radial
   menu, 3D progress bar, collapsible container/panel, UI anim, and now
-  **EzParallax** (thin wrapper around Godot's built-in
-  `StandardMaterial3D.heightmap_enabled` parallax/relief mapping — drop it on
-  a flat wall/floor mesh, give it an albedo + height texture, done) and
-  **EzEquipment** (generic equipment-slot node: named slots holding arbitrary
-  `Resource` items, `equip`/`unequip`/`get_equipped`, `equipped`/`unequipped`
-  signals — not game-specific, just a slot manager).
+  **EzParallaxBg** (multi-layer scrolling background for 2D platformers —
+  fill in an array of `EzParallaxLayerEntry` [texture + scroll speed], it
+  builds the `ParallaxLayer`/`Sprite2D` children and sets
+  `motion_scale`/`motion_mirroring` for you; built on Godot's own
+  `ParallaxBackground`, not a reimplementation) and **EzEquipment** (generic
+  equipment-slot node: named slots holding arbitrary `Resource` items,
+  `equip`/`unequip`/`get_equipped`, `equipped`/`unequipped` signals — not
+  game-specific, just a slot manager).
 - **godot_mcp_server** — WebSocket bridge exposing the editor (scene tree,
   properties, project settings, console/errors, running scenes) to an MCP
   client, with a locally-generated auth secret per session.
