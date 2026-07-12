@@ -35,7 +35,15 @@ auto-discovery mechanism — some are the author's own, several are third-party
 - **ezdialogue** — JSON + signal based dialogue system with global bus,
   branches, choices, quests.
 - **ezsave** — slot-based async save/load (`EzSave` + `EzLoad` nodes).
-- **ezui** — NinePatch-based custom controls: panel, button, bar.
+- **ezui** — NinePatch-based custom controls (panel, button, bar) plus a
+  grab-bag of small reusable nodes merged in from the old `ui_tools`: radial
+  menu, 3D progress bar, collapsible container/panel, UI anim, and now
+  **EzParallax** (thin wrapper around Godot's built-in
+  `StandardMaterial3D.heightmap_enabled` parallax/relief mapping — drop it on
+  a flat wall/floor mesh, give it an albedo + height texture, done) and
+  **EzEquipment** (generic equipment-slot node: named slots holding arbitrary
+  `Resource` items, `equip`/`unequip`/`get_equipped`, `equipped`/`unequipped`
+  signals — not game-specific, just a slot manager).
 - **godot_mcp_server** — WebSocket bridge exposing the editor (scene tree,
   properties, project settings, console/errors, running scenes) to an MCP
   client, with a locally-generated auth secret per session.
@@ -56,8 +64,8 @@ auto-discovery mechanism — some are the author's own, several are third-party
   to run/output in-game commands.
 - **zylann.hterrain** by Marc Gilleron (license included) — heightmap-based
   terrain.
-- **ui_tools** — merged bundle: `advanced_radial_menu`, `basic_settings_menu`,
-  `progress_bar_3d`, `ui_anim`, and `tnowe_extra_controls` by Don Tnowe.
+- **tnowe_extra_controls** by Don Tnowe — now lives inside `ezui/` (was its
+  own bundle under the now-retired `ui_tools`).
 
 ## License
 
