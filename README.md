@@ -52,7 +52,11 @@ auto-discovery mechanism — some are the author's own, several are third-party
   slot count is `backpack_level * 3` [lvl1=3, lvl2=6, lvl3=9, scales linearly
   beyond that], `select_next`/`select_prev` cycle the active slot with
   wraparound for a Minecraft-style scroll-to-select hotbar — items are plain
-  `Resource`s, no shape assumed).
+  `Resource`s, no shape assumed), and **EzHealthBar3D** (world-space HP bar,
+  e.g. floating over an enemy's head — two flat quads, billboarded by copying
+  the active camera's transform basis onto the whole node so background and
+  fill never drift apart at an angle; set `value` 0..1 and it recolors
+  green→red and resizes the fill).
 - **godot_mcp_server** — WebSocket bridge exposing the editor (scene tree,
   properties, project settings, console/errors, running scenes) to an MCP
   client, with a locally-generated auth secret per session.
