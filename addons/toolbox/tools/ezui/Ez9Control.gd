@@ -3,9 +3,9 @@ class_name Ez9Control
 extends NinePatchRect
 
 ## NinePatchRect + Control. Podmień `texture` w Inspektorze żeby użyć własnej.
-## Domyślna tekstura: assets/panel_default.png (64×64, zaokrąglone rogi, ciemny panel).
+## Domyślna tekstura: assets/panel_default.svg (64×64, zaokrąglone rogi, ciemny panel).
 
-const _ASSET  := "res://addons/toolbox/tools/ezui/assets/panel_default.png"
+const _ASSET  := "res://addons/toolbox/tools/ezui/assets/panel_default.svg"
 # 64px tekstura, promień rogu 11px + 2px obwódki -> margin musi objąć całą
 # krzywiznę (inaczej NinePatchRect rozciąga zaokrąglony róg razem ze środkiem
 # i wygląda to brzydko w dużych rozmiarach). Niższa rozdzielczość PNG (dawniej

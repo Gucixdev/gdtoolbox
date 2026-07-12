@@ -8,9 +8,9 @@ extends Ez9Control
 signal pressed
 signal hovered(is_hovered: bool)
 
-const _D_NORMAL  := "res://addons/toolbox/tools/ezui/assets/btn_normal.png"
-const _D_HOVER   := "res://addons/toolbox/tools/ezui/assets/btn_hover.png"
-const _D_PRESSED := "res://addons/toolbox/tools/ezui/assets/btn_pressed.png"
+const _D_NORMAL  := "res://addons/toolbox/tools/ezui/assets/btn_normal.svg"
+const _D_HOVER   := "res://addons/toolbox/tools/ezui/assets/btn_hover.svg"
+const _D_PRESSED := "res://addons/toolbox/tools/ezui/assets/btn_pressed.svg"
 
 static var _def_n: Texture2D
 static var _def_h: Texture2D

@@ -10,7 +10,7 @@ extends Ez9Control
 
 signal value_changed(v: float)
 
-const _D_BG := "res://addons/toolbox/tools/ezui/assets/bar_bg.png"
+const _D_BG := "res://addons/toolbox/tools/ezui/assets/bar_bg.svg"
 
 @export_group("Fill")
 @export_range(0.0, 1.0) var value: float = 1.0:
