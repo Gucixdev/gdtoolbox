@@ -42,6 +42,7 @@ func _build() -> void:
 	bg_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	bg_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	bg_mat.no_depth_test = true
+	bg_mat.render_priority = 0
 	_bg = MeshInstance3D.new()
 	_bg.mesh = bg_mesh
 	_bg.material_override = bg_mat
@@ -50,10 +51,15 @@ func _build() -> void:
 	_fill_mat = StandardMaterial3D.new()
 	_fill_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_fill_mat.no_depth_test = true
+	# render_priority (nie samo przesunięcie Z) wymusza fill NAD tłem — przy
+	# no_depth_test kolejność transparentnych obiektów sortuje się po dystansie
+	# do kamery, a 0.001m różnicy w Z to za mało: przy pewnych kątach/dystansach
+	# kolejność się gubiła i tło z fillem migały miejscami (widoczne jako
+	# "losowa zmiana koloru" paska).
+	_fill_mat.render_priority = 1
 	_fill = MeshInstance3D.new()
 	_fill.mesh = QuadMesh.new()
 	_fill.material_override = _fill_mat
-	# lekko przed tłem na lokalnym Z, żeby nie z-fightowało
 	_fill.position = Vector3(0, 0, 0.001)
 	add_child(_fill)
 
