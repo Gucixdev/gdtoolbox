@@ -20,12 +20,12 @@ in Project Settings → Plugins.
   itself along with the rest of the editor's side docks.
 
 Ships with a bunch of tools pre-installed as a working demo of the
-auto-discovery mechanism — some are the author's own, several are third-party
+auto-discovery mechanism — some are own tools, several are third-party
 (full credit below, each keeps its own license file where it shipped with one).
 
 ## Bundled tools
 
-### Own tools (author: Gucixdev)
+### Own tools
 
 - **dock_collapse** — collapse/expand arrows for the editor's left/right side
   docks (Godot 4.7 `EditorDock`), including the Toolbox dock itself.
@@ -76,6 +76,6 @@ auto-discovery mechanism — some are the author's own, several are third-party
 
 ## License
 
-No blanket license file yet — bundled third-party tools keep whatever license
-they shipped with (see each tool's own folder). Ask before assuming anything
-about the rest.
+MIT (see `LICENSE`) for everything in this repo except the bundled third-party
+tools under "Third-party tools" above, which keep whatever license they
+shipped with (see each tool's own folder).
