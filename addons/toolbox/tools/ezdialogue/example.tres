@@ -1,0 +1,75 @@
+[gd_resource type="Resource" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://addons/toolbox/tools/ezdialogue/DialogueGraph.gd" id="Script_graph"]
+[ext_resource type="Script" path="res://addons/toolbox/tools/ezdialogue/DialogueNode.gd" id="Script_node"]
+[ext_resource type="Script" path="res://addons/toolbox/tools/ezdialogue/DialogueChoice.gd" id="Script_choice"]
+
+[sub_resource type="Resource" id="Choice_trade"]
+script = ExtResource("Script_choice")
+text = "Handel (potrzebujesz złota)"
+next = "trade"
+requires = {
+"has_gold": true
+}
+
+[sub_resource type="Resource" id="Choice_quest"]
+script = ExtResource("Script_choice")
+text = "Przyjmij zadanie"
+next = "quest"
+requires = {}
+
+[sub_resource type="Resource" id="Choice_bye"]
+script = ExtResource("Script_choice")
+text = "Do widzenia"
+next = ""
+requires = {}
+
+[sub_resource type="Resource" id="Node_start"]
+script = ExtResource("Script_node")
+id = "start"
+speaker = "NPC"
+text = "Cześć! Co u ciebie słychać?"
+next = "q1"
+events = Array[String]([])
+choices = Array[DialogueChoice]([])
+
+[sub_resource type="Resource" id="Node_q1"]
+script = ExtResource("Script_node")
+id = "q1"
+speaker = ""
+text = "Co chcesz zrobić?"
+next = ""
+events = Array[String]([])
+choices = Array[DialogueChoice]([SubResource("Choice_trade"), SubResource("Choice_quest"), SubResource("Choice_bye")])
+
+[sub_resource type="Resource" id="Node_trade"]
+script = ExtResource("Script_node")
+id = "trade"
+speaker = "NPC"
+text = "Umowa stoi!"
+next = ""
+events = Array[String](["give_item:sword", "remove_flag:has_gold"])
+choices = Array[DialogueChoice]([])
+
+[sub_resource type="Resource" id="Node_quest"]
+script = ExtResource("Script_node")
+id = "quest"
+speaker = ""
+text = ""
+next = "quest_confirm"
+events = Array[String](["quest_start:main_quest"])
+choices = Array[DialogueChoice]([])
+
+[sub_resource type="Resource" id="Node_quest_confirm"]
+script = ExtResource("Script_node")
+id = "quest_confirm"
+speaker = "NPC"
+text = "Świetnie! Przyniesienie mi ten przedmiot."
+next = ""
+events = Array[String]([])
+choices = Array[DialogueChoice]([])
+
+[resource]
+script = ExtResource("Script_graph")
+start_node = "start"
+nodes = Array[DialogueNode]([SubResource("Node_start"), SubResource("Node_q1"), SubResource("Node_trade"), SubResource("Node_quest"), SubResource("Node_quest_confirm")])

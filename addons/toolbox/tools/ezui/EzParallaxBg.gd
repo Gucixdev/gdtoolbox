@@ -1,6 +1,6 @@
 @tool
 class_name EzParallaxBg
-extends Node
+extends EzUI
 
 ## Generyczny parallax — działa i w 2D, i w 3D, bo sam nie tworzy żadnej
 ## geometrii/sprite'ów. Dodajesz WŁASNE dzieci (Sprite2D, MeshInstance3D,
@@ -17,6 +17,7 @@ var _base_positions: Dictionary = {}  # Node -> pozycja startowa (Vector2 albo V
 var _base_cam_pos = null  # typ dopasowuje się do pierwszej znalezionej kamery
 
 func _ready() -> void:
+	super._ready()
 	_base_positions.clear()
 	_base_cam_pos = null
 	for entry in layers:

@@ -1,0 +1,75 @@
+[gd_resource type="Resource" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://addons/toolbox/tools/ezdialogue/DialogueGraph.gd" id="Script_graph"]
+[ext_resource type="Script" path="res://addons/toolbox/tools/ezdialogue/DialogueNode.gd" id="Script_node"]
+[ext_resource type="Script" path="res://addons/toolbox/tools/ezdialogue/DialogueChoice.gd" id="Script_choice"]
+
+[sub_resource type="Resource" id="Choice_ok"]
+script = ExtResource("Script_choice")
+text = "Podróżnik z południa."
+next = "ok"
+requires = {}
+
+[sub_resource type="Resource" id="Choice_buy"]
+script = ExtResource("Script_choice")
+text = "Kup miecz (wymaga złota)."
+next = "buy"
+requires = {
+"has_gold": true
+}
+
+[sub_resource type="Resource" id="Choice_bye"]
+script = ExtResource("Script_choice")
+text = "Zmykaj!"
+next = "bye"
+requires = {}
+
+[sub_resource type="Resource" id="Node_start"]
+script = ExtResource("Script_node")
+id = "start"
+speaker = "Strażnik"
+text = "Stój! Kto idzie?"
+next = "choice"
+events = Array[String]([])
+choices = Array[DialogueChoice]([])
+
+[sub_resource type="Resource" id="Node_choice"]
+script = ExtResource("Script_node")
+id = "choice"
+speaker = ""
+text = ""
+next = ""
+events = Array[String]([])
+choices = Array[DialogueChoice]([SubResource("Choice_ok"), SubResource("Choice_buy"), SubResource("Choice_bye")])
+
+[sub_resource type="Resource" id="Node_ok"]
+script = ExtResource("Script_node")
+id = "ok"
+speaker = "Strażnik"
+text = "Możesz przejść. Uważaj na siebie."
+next = ""
+events = Array[String]([])
+choices = Array[DialogueChoice]([])
+
+[sub_resource type="Resource" id="Node_buy"]
+script = ExtResource("Script_node")
+id = "buy"
+speaker = ""
+text = ""
+next = "ok"
+events = Array[String](["give_item:sword", "remove_gold:50"])
+choices = Array[DialogueChoice]([])
+
+[sub_resource type="Resource" id="Node_bye"]
+script = ExtResource("Script_node")
+id = "bye"
+speaker = "Strażnik"
+text = "Nie wracaj."
+next = ""
+events = Array[String]([])
+choices = Array[DialogueChoice]([])
+
+[resource]
+script = ExtResource("Script_graph")
+start_node = "start"
+nodes = Array[DialogueNode]([SubResource("Node_start"), SubResource("Node_choice"), SubResource("Node_ok"), SubResource("Node_buy"), SubResource("Node_bye")])

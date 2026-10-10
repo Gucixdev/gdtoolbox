@@ -1,6 +1,6 @@
 @tool
 class_name EzInventory
-extends Node
+extends EzUI
 
 ## Generyczny hotbar/inventory ze zmienną liczbą slotów zależną od
 ## backpack_level: slot_count = backpack_level * 3 (lvl1=3, lvl2=6, lvl3=9,
@@ -23,6 +23,7 @@ var slots: Array = []
 var selected_index: int = 0
 
 func _ready() -> void:
+	super._ready()
 	_resize_slots()
 
 func _resize_slots() -> void:

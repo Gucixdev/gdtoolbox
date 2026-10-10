@@ -1,139 +1,313 @@
+class_name SaveSystem
 extends Node
-## EzSave — autoload singleton. Slot-based save/load z threadingiem.
+
+## Zapis gry jak w Skyrim / Wiedźminie. Autoload `Saves` (rejestruje go plugin),
+## zero setupu w scenach.
 ##
-## Szybkie użycie:
-##   SaveSystem.save(0, {"score": 100, "level": 3})
-##   var data = SaveSystem.load(0)
+## Co zapisać — dwa sposoby:
+##   • w edytorze: dodaj node do grupy "save" i ustaw w Inspektorze
+##     Metadata `save_props` (PackedStringArray: "position", "hp"…)
+##   • z kodu:     Saves.track($Player, ["position", "hp"])
+##   • dane bez node'a (flagi questów itd.): Saves.globals["quest_wolf"] = 2
 ##
-## Async (nie blokuje głównego wątku):
-##   await SaveSystem.save_async(0, {"score": 100})
-##   var data = await SaveSystem.load_async(0)
+## Sloty:
+##   Saves.save_game()            # nowy ręczny slot (manual_1, manual_2…)
+##   Saves.save_game(&"manual_3") # konkretny slot
+##   Saves.quicksave() / quickload()   # F5 / F9 (akcje tworzone same)
+##   Saves.autosave()             # rotacja auto_1..auto_N, najstarszy nadpisany
+##   Saves.load_latest()          # przycisk "Continue"
+##   Saves.list_saves()           # dla menu: slot, label, time, playtime, scene, thumbnail
+##
+## Pliki: user://saves/<slot>.sav (+ .bak poprzedniej wersji, + .jpg miniatura).
+## Zapis idzie na wątku (autosave nie przycina gry), jest atomowy i ma kopię
+## .bak — uszkodzony plik nie kasuje ostatniego dobrego stanu.
 
-signal saved(slot: int)
-signal loaded(slot: int, data: Dictionary)
-signal save_failed(slot: int, error: int)
-signal load_failed(slot: int)
+signal saved(slot: StringName)
+signal autosaved(slot: StringName)
+signal loaded(slot: StringName)
+signal load_failed(slot: StringName)
 
-const SAVE_DIR  := "user://saves/"
-const EXTENSION := ".sav"
+const SAVE_DIR := "user://saves/"
+const EXT := ".sav"
+const FORMAT_VERSION := 1
 
-# ── Sync API ──────────────────────────────────────────────────────────────────
+@export_group("Autosave")
+## Autozapis co N minut (0 = wyłączony).
+@export_range(0.0, 120.0, 0.5, "suffix:min") var autosave_every_minutes: float = 5.0
+@export var autosave_on_scene_change: bool = true
+@export var autosave_on_exit: bool = true
+@export_range(1, 20) var max_autosaves: int = 3
+@export_group("Quick")
+@export var quicksave_action: StringName = &"quicksave"
+@export var quickload_action: StringName = &"quickload"
+@export_group("Misc")
+## Wczytaj ostatni zapis zaraz po starcie gry.
+@export var load_latest_on_start: bool = false
+@export var thumbnail_width: int = 256
+## Wpisywane do metadanych — przydatne przy migracji zapisów.
+@export var game_version: String = "1.0"
 
-func save(slot: int, data: Dictionary) -> bool:
-	_ensure_dir()
-	var res := _DictResource.new()
-	res.data = data
-	var err := ResourceSaver.save(res, _path(slot))
-	if err != OK:
-		push_error("[SaveSystem] save slot %d failed: %s" % [slot, error_string(err)])
-		save_failed.emit(slot, err)
+## Dane gry bez node'a (flagi, ekwipunek jako Dictionary…). Zapisywane w całości.
+var globals: Dictionary = {}
+## Czas gry w sekundach — liczony i przywracany automatycznie.
+var playtime: float = 0.0
+## Ustaw true w cutscenkach/walce/menu, żeby zablokować zapis (jak w Skyrim).
+var save_blocked: bool = false
+
+var _providers: Dictionary = {}   # key -> [Callable get, Callable set]
+var _autosave_timer := 0.0
+var _last_scene: Node
+var _scene_cooldown := 0.0
+var _writing: Dictionary = {}   # slot -> task id (zapisy w toku)
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	if Engine.is_editor_hint(): return
+	_ensure_action(quicksave_action, KEY_F5)
+	_ensure_action(quickload_action, KEY_F9)
+	get_tree().auto_accept_quit = not autosave_on_exit
+	if load_latest_on_start and has_any_save():
+		load_latest.call_deferred()
+
+func _process(delta: float) -> void:
+	if get_tree().paused: return
+	playtime += delta
+	_scene_cooldown = maxf(_scene_cooldown - delta, 0.0)
+	if autosave_every_minutes > 0.0:
+		_autosave_timer += delta
+		if _autosave_timer >= autosave_every_minutes * 60.0:
+			autosave()
+	var cur := get_tree().current_scene
+	if cur != _last_scene:
+		var first := _last_scene == null
+		_last_scene = cur
+		if autosave_on_scene_change and not first and _scene_cooldown <= 0.0:
+			_scene_cooldown = 5.0
+			autosave.call_deferred()
+
+func _unhandled_input(ev: InputEvent) -> void:
+	if ev.is_action_pressed(quicksave_action):
+		quicksave()
+	elif ev.is_action_pressed(quickload_action):
+		quickload()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST and autosave_on_exit and not Engine.is_editor_hint():
+		_write_slot(_next_autosave_slot(), "auto", "", true)
+		get_tree().quit()
+
+# ── zapis ────────────────────────────────────────────────────────────────────
+
+func save_game(slot: StringName = &"", label: String = "") -> StringName:
+	if slot == &"":
+		slot = _next_manual_slot()
+	return _write_slot(slot, "quick" if slot == &"quick" else ("auto" if String(slot).begins_with("auto_") else "manual"), label, false)
+
+func quicksave() -> StringName:
+	return _write_slot(&"quick", "quick", "Quicksave", false)
+
+func autosave() -> StringName:
+	_autosave_timer = 0.0
+	var s := _write_slot(_next_autosave_slot(), "auto", "Autosave", false)
+	if s != &"": autosaved.emit(s)
+	return s
+
+## Rejestruje node do zapisu z kodu (zamiast ręcznego grupowania w edytorze).
+func track(node: Node, props: PackedStringArray) -> void:
+	node.add_to_group(&"save")
+	node.set_meta(&"save_props", props)
+
+## Dane spoza drzewa sceny. Przykład: DialogueSystem rejestruje swoje flagi.
+func register_provider(key: String, getter: Callable, setter: Callable) -> void:
+	_providers[key] = [getter, setter]
+
+# ── odczyt ───────────────────────────────────────────────────────────────────
+
+func load_game(slot: StringName) -> bool:
+	var file := _read(slot)
+	if file.is_empty():
+		load_failed.emit(slot)
 		return false
-	saved.emit(slot)
+	var meta: Dictionary = file.get("meta", {})
+	playtime = float(meta.get("playtime", 0.0))
+	globals = file.get("globals", {})
+	for key in file.get("providers", {}):
+		if _providers.has(key):
+			(_providers[key][1] as Callable).call(file["providers"][key])
+	var scene: String = meta.get("scene", "")
+	if scene != "" and get_tree().current_scene != null and get_tree().current_scene.scene_file_path != scene:
+		get_tree().change_scene_to_file(scene)
+		await get_tree().process_frame
+		await get_tree().process_frame
+	_apply_nodes(file.get("nodes", {}))
+	loaded.emit(slot)
 	return true
 
-func load(slot: int) -> Dictionary:
-	var path := _path(slot)
-	if not ResourceLoader.exists(path):
-		push_warning("[SaveSystem] slot %d not found." % slot)
-		load_failed.emit(slot)
-		return {}
-	var res := ResourceLoader.load(path) as _DictResource
-	if not res:
-		push_error("[SaveSystem] slot %d corrupt." % slot)
-		load_failed.emit(slot)
-		return {}
-	loaded.emit(slot, res.data)
-	return res.data
+func quickload() -> bool:
+	return await load_game(&"quick")
 
-func delete(slot: int) -> void:
-	var path := _path(slot)
-	if FileAccess.file_exists(path):
-		DirAccess.remove_absolute(path)
+## "Continue" — wczytuje najnowszy zapis (ręczny, quick albo auto).
+func load_latest() -> bool:
+	var l := list_saves()
+	return false if l.is_empty() else await load_game(l[0]["slot"])
 
-func slot_exists(slot: int) -> bool:
-	return FileAccess.file_exists(_path(slot))
+# ── zarządzanie ──────────────────────────────────────────────────────────────
 
-func list_slots() -> Array[int]:
-	_ensure_dir()
-	var slots: Array[int] = []
+func has_any_save() -> bool:
+	return not list_saves().is_empty()
+
+func has_save(slot: StringName) -> bool:
+	return FileAccess.file_exists(_path(slot)) or FileAccess.file_exists(_path(slot) + ".bak")
+
+func delete_save(slot: StringName) -> void:
+	for p in [_path(slot), _path(slot) + ".bak", _thumb_path(slot)]:
+		if FileAccess.file_exists(p):
+			DirAccess.remove_absolute(p)
+
+## Metadane wszystkich zapisów, najnowsze pierwsze:
+## {slot, kind, label, time, playtime, scene, game_version, thumbnail}
+func list_saves() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
 	var dir := DirAccess.open(SAVE_DIR)
-	if not dir: return slots
-	dir.list_dir_begin()
-	var f := dir.get_next()
-	while f != "":
-		if f.ends_with(EXTENSION):
-			var n := f.get_basename().to_int()
-			slots.append(n)
-		f = dir.get_next()
-	slots.sort()
-	return slots
+	if dir == null: return out
+	for f in dir.get_files():
+		if not f.ends_with(EXT): continue
+		var slot := StringName(f.trim_suffix(EXT))
+		var file := _read(slot)
+		if file.is_empty(): continue
+		var m: Dictionary = (file.get("meta", {}) as Dictionary).duplicate()
+		m["slot"] = slot
+		m["thumbnail"] = _thumb_path(slot) if FileAccess.file_exists(_thumb_path(slot)) else ""
+		out.append(m)
+	out.sort_custom(func(a, b): return a.get("time", 0) > b.get("time", 0))
+	return out
 
-# ── Async API ─────────────────────────────────────────────────────────────────
+# ── internals ────────────────────────────────────────────────────────────────
 
-## Zapisuje na wątku. Awaytuj sygnał saved / save_failed lub po prostu awajtuj tę funkcję.
-func save_async(slot: int, data: Dictionary) -> Signal:
-	var sem  := Semaphore.new()
-	var mtx  := Mutex.new()
-	var ok   := false
+static func _path(slot: StringName) -> String:
+	return SAVE_DIR + String(slot) + EXT
 
-	var thread := Thread.new()
-	thread.start(func():
-		_ensure_dir()
-		var res := _DictResource.new()
-		res.data = data
-		var err := ResourceSaver.save(res, _path(slot))
-		mtx.lock()
-		ok = (err == OK)
-		mtx.unlock()
-		sem.post()
-	)
+static func _thumb_path(slot: StringName) -> String:
+	return SAVE_DIR + String(slot) + ".jpg"
 
-	await _wait_sem(sem)
-	thread.wait_to_finish()
+func _next_manual_slot() -> StringName:
+	var n := 1
+	while FileAccess.file_exists(_path(StringName("manual_%d" % n))):
+		n += 1
+	return StringName("manual_%d" % n)
 
-	if ok: saved.emit(slot)
-	else:  save_failed.emit(slot, FAILED)
-	return saved if ok else save_failed
+func _next_autosave_slot() -> StringName:
+	# pierwszy wolny, a gdy wszystkie zajęte — najstarszy
+	var oldest := &"auto_1"
+	var oldest_t := INF
+	for i in range(1, max_autosaves + 1):
+		var s := StringName("auto_%d" % i)
+		if _writing.has(s):
+			continue
+		if not FileAccess.file_exists(_path(s)):
+			return s
+		var t := FileAccess.get_modified_time(_path(s))
+		if t < oldest_t:
+			oldest_t = t
+			oldest = s
+	return oldest
 
-## Ładuje na wątku. Awaytuj sygnał loaded / load_failed lub po prostu awajtuj tę funkcję.
-func load_async(slot: int) -> Signal:
-	var path := _path(slot)
-	if not ResourceLoader.exists(path):
-		load_failed.emit(slot)
-		return load_failed
+func _snapshot_nodes() -> Dictionary:
+	var out := {}
+	for n in get_tree().get_nodes_in_group(&"save"):
+		var props: PackedStringArray = n.get_meta(&"save_props", PackedStringArray())
+		var d := {}
+		for p in props:
+			d[p] = n.get(p)
+		if not d.is_empty():
+			out[str(n.get_path())] = d
+	return out
 
-	var sem    := Semaphore.new()
-	var result := {}
+func _apply_nodes(nodes: Dictionary) -> void:
+	for path in nodes:
+		var n := get_node_or_null(NodePath(path))
+		if n == null: continue
+		for p in nodes[path]:
+			n.set(p, nodes[path][p])
 
-	var thread := Thread.new()
-	thread.start(func():
-		var res := ResourceLoader.load(path)
-		if res is _DictResource:
-			result = res.data
-		sem.post()
-	)
+func _write_slot(slot: StringName, kind: String, label: String, sync: bool) -> StringName:
+	if save_blocked or Engine.is_editor_hint():
+		return &""
+	if _writing.has(slot):
+		push_warning("SaveSystem: slot '%s' jest właśnie zapisywany" % slot)
+		return &""
+	var providers := {}
+	for key in _providers:
+		providers[key] = (_providers[key][0] as Callable).call()
+	var scene := get_tree().current_scene
+	var meta := {
+		"kind": kind,
+		"label": label if label != "" else String(slot),
+		"time": Time.get_unix_time_from_system(),
+		"playtime": playtime,
+		"scene": scene.scene_file_path if scene else "",
+		"game_version": game_version,
+	}
+	var file := {"v": FORMAT_VERSION, "meta": meta, "globals": globals.duplicate(true),
+		"providers": providers, "nodes": _snapshot_nodes()}
+	var thumb: Image = null
+	var tex := get_viewport().get_texture()
+	if tex != null and DisplayServer.get_name() != "headless":
+		thumb = tex.get_image()
+		if thumb != null and thumb.get_width() > 0:
+			thumb.resize(thumbnail_width, int(thumbnail_width * thumb.get_height() / float(thumb.get_width())))
+	if sync:
+		var ok := _write_file(slot, file, thumb)
+		if ok: saved.emit(slot)
+		return slot if ok else &""
+	_writing[slot] = -1
+	var task := WorkerThreadPool.add_task(func():
+		var ok := _write_file(slot, file, thumb)
+		_on_written.call_deferred(slot, ok))
+	_writing[slot] = task
+	return slot
 
-	await _wait_sem(sem)
-	thread.wait_to_finish()
+func _on_written(slot: StringName, ok: bool) -> void:
+	var task: int = _writing.get(slot, -1)
+	if task >= 0:
+		WorkerThreadPool.wait_for_task_completion(task)
+	_writing.erase(slot)
+	if ok:
+		saved.emit(slot)
+	else:
+		push_error("SaveSystem: zapis slotu '%s' nie powiódł się" % slot)
 
-	if result.is_empty(): load_failed.emit(slot)
-	else:                  loaded.emit(slot, result)
-	return loaded if not result.is_empty() else load_failed
+static func _write_file(slot: StringName, file: Dictionary, thumb: Image) -> bool:
+	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
+	var final_path := _path(slot)
+	var tmp := final_path + ".tmp"
+	var f := FileAccess.open(tmp, FileAccess.WRITE)
+	if f == null:
+		push_error("SaveSystem: nie mogę otworzyć %s (%s)" % [tmp, error_string(FileAccess.get_open_error())])
+		return false
+	f.store_var(file)
+	f.close()
+	if FileAccess.file_exists(final_path):
+		DirAccess.rename_absolute(final_path, final_path + ".bak")
+	if DirAccess.rename_absolute(tmp, final_path) != OK:
+		return false
+	if thumb != null:
+		thumb.save_jpg(_thumb_path(slot), 0.85)
+	return true
 
-# ── Internal ──────────────────────────────────────────────────────────────────
+static func _read(slot: StringName) -> Dictionary:
+	for p in [_path(slot), _path(slot) + ".bak"]:
+		if not FileAccess.file_exists(p): continue
+		var f := FileAccess.open(p, FileAccess.READ)
+		if f == null: continue
+		var v = f.get_var()   # allow_objects=false — bezpieczne dla cudzych plików
+		if v is Dictionary and (v as Dictionary).has("meta"):
+			return v
+	return {}
 
-func _path(slot: int) -> String:
-	return SAVE_DIR + str(slot) + EXTENSION
-
-func _ensure_dir() -> void:
-	if not DirAccess.dir_exists_absolute(SAVE_DIR):
-		DirAccess.make_dir_recursive_absolute(SAVE_DIR)
-
-func _wait_sem(sem: Semaphore) -> void:
-	while true:
-		if sem.try_wait(): break
-		await get_tree().process_frame
-
-# wewnętrzny Resource trzymający dane
-class _DictResource extends Resource:
-	@export var data: Dictionary = {}
+static func _ensure_action(action: StringName, key: Key) -> void:
+	if InputMap.has_action(action): return
+	InputMap.add_action(action)
+	var ev := InputEventKey.new()
+	ev.physical_keycode = key
+	InputMap.action_add_event(action, ev)

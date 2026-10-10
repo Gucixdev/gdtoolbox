@@ -1,6 +1,6 @@
 @tool
 class_name EzEquipment
-extends Node
+extends EzUI
 
 ## Generyczny system slotów na ekwipunek — NIE fps-specific (żyje w toolboxie,
 ## ma być reużywalny w innych projektach). Slot to nazwa (String), przedmiot
@@ -20,6 +20,7 @@ signal unequipped(slot_name: String, item: Resource)
 var _slots: Dictionary = {}  # String -> Resource albo null
 
 func _ready() -> void:
+	super._ready()
 	for s in slot_names:
 		_slots[s] = null
 

@@ -25,38 +25,34 @@ auto-discovery mechanism — some are the author's own, several are third-party
 
 ## Bundled tools
 
-### Own tools (author: Gucixdev / pet)
+### Own tools (author: Gucixdev)
 
 - **dock_collapse** — collapse/expand arrows for the editor's left/right side
   docks (Godot 4.7 `EditorDock`), including the Toolbox dock itself.
-- **ezanim** — UI animation node: fades, pops, slides, wiggles.
+- **ezanim** — `AnimPlayer`: one node for fades, pops, slides, wiggles
+  (replaces the old separate `EzAnim`/`EzAnimPlayer`/`UIAnim`).
 - **ezmaterials** — shader material system with matcap, PBR, phong, voronoi,
   opal, and POM shading.
-- **ezdialogue** — JSON + signal based dialogue system with global bus,
-  branches, choices, quests.
-- **ezsave** — slot-based async save/load (`EzSave` + `EzLoad` nodes).
-- **ezui** — NinePatch-based custom controls (panel, button, bar) plus a
-  grab-bag of small reusable nodes merged in from the old `ui_tools`: radial
-  menu, 3D progress bar, collapsible container/panel, UI anim, and now
-  **EzParallaxBg** (generic parallax — works for 2D or 3D, since it doesn't
-  create any geometry itself: add your own children — `Sprite2D`,
-  `MeshInstance3D`, whole subtrees, anything — then in `layers` point an
-  `EzParallaxLayerEntry` at each child's `NodePath` with a `shift` float
-  [0 = static/background, 1 = moves with the camera 1:1, in between/above
-  for depth]. Auto-detects whichever camera — 2D or 3D — is active in the
-  viewport and offsets each layer from its starting position accordingly)
-  **EzEquipment** (generic
-  equipment-slot node: named slots holding arbitrary `Resource` items,
-  `equip`/`unequip`/`get_equipped`, `equipped`/`unequipped` signals — not
-  game-specific, just a slot manager), and **EzInventory** (generic hotbar:
-  slot count is `backpack_level * 3` [lvl1=3, lvl2=6, lvl3=9, scales linearly
-  beyond that], `select_next`/`select_prev` cycle the active slot with
-  wraparound for a Minecraft-style scroll-to-select hotbar — items are plain
-  `Resource`s, no shape assumed), and **EzHealthBar3D** (world-space HP bar,
-  e.g. floating over an enemy's head — two flat quads, billboarded by copying
-  the active camera's transform basis onto the whole node so background and
-  fill never drift apart at an angle; set `value` 0..1 and it recolors
-  green→red and resizes the fill).
+- **ezdialogue** — `DialogueSystem`: plays a `DialogueGraph` resource
+  (`start()`/`advance()`/`choose()`, `line`/`choices` signals, branches and
+  quests via `DialogueNode`/`DialogueChoice`).
+- **ezsave** — `SaveSystem`: Skyrim/Witcher-style saves (manual/quick/rotating
+  autosave, continue, thumbnails, `.bak`) behind the autoload `Saves` — track
+  a node via group `"save"` + Inspector metadata `save_props`, or
+  `Saves.track($Node, ["position", "hp"])` from code.
+- **ezui** — `Control3D` puts any `Control` (a `ProgressBar`, a `Label`, a
+  whole HUD) into 3D space via an internal `SubViewport` billboarded onto a
+  `Sprite3D` — replaces the old separate `EzHealthBar3D`/`ProgressBar3D`
+  (for a flat panel/button/bar, just use the built-in `Panel`/`Button`/
+  `ProgressBar` directly — `Ez9*` is gone). `UIDynamics` is one-node spring
+  physics for UI (hover/press/focus/appear react on their own, pure
+  GDScript, no Tweens to hand-wire). `EzUI` is a plain marker node for a UI
+  subtree's root. Also still here: **EzParallaxBg** (generic parallax for
+  2D or 3D — point an `EzParallaxLayerEntry` at each child's `NodePath` with
+  a `shift` float, 0=static/background to 1=moves with the camera 1:1),
+  **EzEquipment** (named equipment slots over arbitrary `Resource` items),
+  **EzInventory** (generic scroll-to-select hotbar, slot count scales with
+  `backpack_level`), and a radial menu (`radial/RadialMenu.gd`).
 - **godot_mcp_server** — WebSocket bridge exposing the editor (scene tree,
   properties, project settings, console/errors, running scenes) to an MCP
   client, with a locally-generated auth secret per session.
@@ -75,10 +71,8 @@ auto-discovery mechanism — some are the author's own, several are third-party
   (Shift+Right Click to place, Shift+S for the pie menu).
 - **dev-console** by cherttov (license included) — in-game developer console
   to run/output in-game commands.
-- **zylann.hterrain** by Marc Gilleron (license included) — heightmap-based
-  terrain.
-- **tnowe_extra_controls** by Don Tnowe — now lives inside `ezui/` (was its
-  own bundle under the now-retired `ui_tools`).
+- **tnowe_extra_controls** by Don Tnowe — folded into `ezui/utils/` as
+  internal helper code (no longer its own sub-plugin).
 
 ## License
 
