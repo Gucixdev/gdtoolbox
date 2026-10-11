@@ -62,23 +62,34 @@ auto-discovery mechanism — some are own tools, several are third-party
   properties, project settings, console/errors, running scenes) to an MCP
   client, with a locally-generated auth secret per session.
 - **plugin-sync** — syncs a GDScript linter plugin in from a source project.
+- **mesh_inspector** — surface, vertex and triangle counts plus local and world
+  bounding box size/volume at the top of the Inspector for a `MeshInstance3D` or a
+  `Mesh` resource. Counts come from the surface arrays (cheap on big meshes); the
+  logic is in `mesh_stats.gd` with tests in `tests/`.
 
-### Third-party tools (bundled as-is, full credit to original authors)
+### Third-party tools (bundled with their MIT licenses and original authors)
 
-- **script-ide** by Marius Hanl (MIT, license included) — transforms the
-  Script UI into an IDE-like tabbed interface with an improved Outline.
-- **InstanceDock** by KoBeWi — dedicated dock to keep scenes close at hand for
-  instancing.
-- **inspector_tabs** by PiCode — splits the Inspector's property classes into
-  their own tabs.
-- **mesh_inspector** by @Gamehooe — shows stats about the selected mesh.
-- **dev-console** by cherttov (license included) — in-game developer console
-  to run/output in-game commands.
-- **tnowe_extra_controls** by Don Tnowe — folded into `ezui/utils/` as
-  internal helper code (no longer its own sub-plugin).
+Each of these is MIT licensed; the license text with the author's copyright line
+sits next to the code (`LICENSE` in the tool folder).
+
+- **script-ide** by Marius Hanl — transforms the Script UI into an IDE-like tabbed
+  interface with an improved Outline. ([`LICENSE`](addons/toolbox/tools/script-ide/LICENSE))
+- **dev-console** by cherttov — in-game developer console to run/output in-game
+  commands. ([`LICENSE`](addons/toolbox/tools/dev-console/LICENSE))
+- **InstanceDock** by KoBeWi
+  ([Godot-Instance-Dock](https://github.com/KoBeWi/Godot-Instance-Dock)) — dedicated
+  dock to keep scenes close at hand for instancing.
+  ([`LICENSE`](addons/toolbox/tools/InstanceDock/LICENSE))
+- **inspector_tabs** by PiCode9560
+  ([Godot-Inspector-Tabs](https://github.com/PiCode9560/Godot-Inspector-Tabs)) — splits
+  the Inspector's property classes into their own tabs.
+  ([`LICENSE`](addons/toolbox/tools/inspector_tabs/LICENSE))
+- **Extra Controls** by Don Tnowe
+  ([godot-extra-controls](https://github.com/don-tnowe/godot-extra-controls)) — the
+  container and control helpers in `ezui/utils/`.
+  ([`LICENSE.tnowe-extra-controls`](addons/toolbox/tools/ezui/utils/LICENSE.tnowe-extra-controls))
 
 ## License
 
-MIT (see `LICENSE`) for everything in this repo except the bundled third-party
-tools under "Third-party tools" above, which keep whatever license they
-shipped with (see each tool's own folder).
+MIT (see `LICENSE`). The bundled third-party tools above are MIT too and keep
+their own copyright notices in their folders.
