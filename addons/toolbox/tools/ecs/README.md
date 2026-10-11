@@ -21,9 +21,9 @@ test/
   EcsExampleStatTickSystem.gd   generic regen/decay tick for one stat component
 ```
 
-The native core and this binding's source live in
-[Gucixdev/ecs](https://github.com/Gucixdev/ecs) (C99, `godot/gdext`); its `godot/README.md`
-has the exact build commands, and the binaries in `bin/` were built from that repo.
+The native core and this binding's source are in [`native/`](native/) (C99, `native/godot/gdext`
+for the GDExtension); `native/godot/README.md` has the exact build commands, and the binaries in
+`bin/` are built from it. The folder carries a `.gdignore`, so the editor does not scan the C sources.
 
 Linux x86_64 and Windows x86_64 ship (debug + release binaries, cross-built via mingw-w64 for
 Windows). macOS isn't set up - it needs Apple's SDK (osxcross) to cross-build from Linux, which

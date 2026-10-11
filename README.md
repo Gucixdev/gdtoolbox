@@ -37,8 +37,8 @@ auto-discovery mechanism — some are own tools, several are third-party
 - **ecs** — archetype-table ECS: a GDExtension binding (`EcsWorld`/`EcsView`) over
   a native C core, plus a thin GDScript layer (`EcsEntity`/`EcsComponent`/`EcsSystem`,
   behind the autoload `Ecs`) — bulk per-table iteration instead of SceneTree-group
-  scans. Own `README.md` inside the tool folder. Ships Linux x86_64 debug AND release
-  binaries; other platforms/arches aren't built yet.
+  scans. Own `README.md` inside the tool folder. Ships Linux and Windows x86_64 (debug AND
+  release); macOS not built (needs Apple's SDK to cross-build).
 - **ezdialogue** — `DialogueSystem`: plays a `DialogueGraph` resource
   (`start()`/`advance()`/`choose()`, `line`/`choices` signals, branches and
   quests via `DialogueNode`/`DialogueChoice`).
@@ -73,10 +73,14 @@ auto-discovery mechanism — some are own tools, several are third-party
 Each of these is MIT licensed; the license text with the author's copyright line
 sits next to the code (`LICENSE` in the tool folder).
 
-- **script-ide** by Marius Hanl — transforms the Script UI into an IDE-like tabbed
-  interface with an improved Outline. ([`LICENSE`](addons/toolbox/tools/script-ide/LICENSE))
-- **dev-console** by cherttov — in-game developer console to run/output in-game
-  commands. ([`LICENSE`](addons/toolbox/tools/dev-console/LICENSE))
+- **script-ide** by Marius Hanl
+  ([Maran23/script-ide](https://github.com/Maran23/script-ide)) — transforms the Script UI
+  into an IDE-like tabbed interface with an improved Outline.
+  ([`LICENSE`](addons/toolbox/tools/script-ide/LICENSE))
+- **dev-console** by cherttov
+  ([godot-dev-console](https://github.com/cherttov/godot-dev-console)) — in-game developer
+  console to run/output in-game commands.
+  ([`LICENSE`](addons/toolbox/tools/dev-console/LICENSE))
 - **InstanceDock** by KoBeWi
   ([Godot-Instance-Dock](https://github.com/KoBeWi/Godot-Instance-Dock)) — dedicated
   dock to keep scenes close at hand for instancing.
