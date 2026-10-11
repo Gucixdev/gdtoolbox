@@ -49,6 +49,8 @@ public:
 	bool set_component_bytes(int64_t e, int comp, PackedByteArray data);
 
 	Ref<EcsView> create_view(PackedInt32Array comps); // AND of every comp id in `comps`
+
+	ecs_world *raw() const { return _w; } // for EcsStats::collect
 };
 
 } // namespace godot

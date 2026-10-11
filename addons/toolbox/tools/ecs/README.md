@@ -11,9 +11,10 @@ ecs.gdextension                 points at bin/ for each platform/config
 bin/
   libecs_gdext.linux.template_debug.x86_64.so     editor + debug export
   libecs_gdext.linux.template_release.x86_64.so   release export
-Ecs.gd                          autoload singleton: the shared EcsWorld + component-id cache
+Ecs.gd                          autoload singleton: shared EcsWorld + component-id cache, plus
+                                 lazy shared EcsStats/EcsGas/EcsScheduler/EcsStreamer
 EcsComponent.gd                 base for a component definition (byte_size/to_bytes/from_bytes)
-EcsEntity.gd                    Node wrapper around one native entity id
+EcsEntity.gd                    Node wrapper around one native entity id, incl. stats/gas helpers
 EcsSystem.gd                    Node wrapper that runs a query every _process()
 test/
   EcsExampleStatComponent.gd    generic depletable/regenerating float stat (hp/mp/sp/...)
@@ -101,6 +102,46 @@ subclass - set `stat_script` in the Inspector).
 For a one-entity-at-a-time style instead of bulk columns, call `view.next()` yourself (returns
 an entity id, or -1 once exhausted) rather than `next_table()`/`column_bytes()`.
 
+## Stats, gas, scheduler, streamer
+
+Beyond the base archetype API, the native core also provides souls-like combat stats
+(`EcsStats`), tags/effects/abilities (`EcsGas`), a phase/fixed-timestep scheduler
+(`EcsScheduler`) and distance-driven asset streaming (`EcsStreamer`) - all raw GDExtension
+classes, bindable directly. `Ecs.gd` adds one `ensure_*()` per module that lazily creates a
+single shared instance (not every game needs combat or streaming, so none of this is paid for
+until used), and `EcsEntity` adds thin entity-id <-> row convenience on top of `Ecs.stats`/
+`Ecs.gas` - the row lookup is the one gotcha these wrap away (`EcsStats` addresses rows, not
+entity ids; `EcsGas` takes entity ids directly):
+
+```gdscript
+var hero := EcsEntity.new()
+var slime := EcsEntity.new()
+add_child(hero); add_child(slime)
+
+hero.add_stats({"vigor": 20, "mind": 10, "endurance": 15, "strength": 40})
+slime.add_stats({"vigor": 5, "mind": 5, "endurance": 5, "strength": 5})
+Ecs.stats.set_weapon(hero.stats_row(), {"base": PackedFloat32Array([25.0, 0, 0, 0, 0])}, {})
+
+var result := hero.hit(slime, 1.0)   # Dictionary: dealt/overkill/killed/staggered/status_triggered
+print(slime.pool_cur(EcsStats.POOL_HP), " / ", slime.pool_max(EcsStats.POOL_HP))
+
+var burning := Ecs.ensure_gas().tag("burning")
+slime.set_tags(burning)
+var dot := Ecs.gas.add_effect({
+	"name": "burn", "kind": EcsGas.EFFECT_DURATION, "duration": 3.0, "period": 0.5,
+	"stat": EcsStats.COL_CUR + EcsStats.POOL_HP, "op": EcsGas.MOD_ADD, "magnitude": -2.0,
+})
+slime.apply_effect(dot, hero)
+```
+
+`EcsEntity._exit_tree()` also removes the entity's stats row if it has one - `EcsStats` is a
+side table the native core doesn't know about, so `destroy_entity()` alone would otherwise
+leave a stale row behind. `Ecs.events` (an `EcsEventBus`) is created eagerly rather than
+lazily - cheap, and useful as plain pub/sub even in a game that uses neither stats nor gas;
+`Ecs.ensure_stats()`/`ensure_gas()` both wire themselves to it automatically.
+`EcsScheduler`/`EcsStreamer` don't have entity-level sugar (there's nothing per-entity to wrap) -
+reach `Ecs.ensure_scheduler()`/`Ecs.ensure_streamer()` directly.
+
 ## Rules the native core expects you to follow
 
 - **One world per game is normal.** `Ecs.world` is the shared instance everything above uses;
@@ -119,11 +160,15 @@ an entity id, or -1 once exhausted) rather than `next_table()`/`column_bytes()`.
   `get_component_bytes`/`set_component_bytes` copy, so they're the safe default outside a
   system's bulk column loop.
 
-## Known gaps (tracked upstream, not yet surfaced here)
+## What's bound, and what isn't
 
-The native core (`/data/dev/setup/base/holyC/ecs`, see its own `ROADMAP.md`) has grown well past
-this binding's current surface - query caching, a system scheduler, events, relationships,
-hierarchies, change detection, and a souls-like stats/gameplay-effects module all exist natively
-but aren't exposed through `EcsWorld`/`EcsView` yet. This binding only covers the base archetype
-API (entities, components, tags, views) - the right slice for replacing `EzEntity`/`EzComponent`/
-`EzSystem`, not yet a full port of everything the native core can do.
+Besides `EcsWorld`/`EcsView` (base archetype API: entities, components, tags, views), this
+binding also exposes `EcsEventBus` (`ecs_event.h`), `EcsStats` (`ecs_stats.h`, souls-like combat
+stats), `EcsGas` (`ecs_gas.h`, tags/effects/abilities) and `EcsScheduler` (`ecs_sched.h`,
+phase/fixed-timestep scheduling), plus `EcsStreamer` (`ecs_stream.h`, distance-driven asset/cell
+streaming). `ecs_dynamics.h` is deliberately not bound here - it stays native-only.
+
+Query caching, relationships, hierarchies and change-detection are **not gaps in this binding** -
+they don't exist in the native core yet either (see its own `ROADMAP.md` at
+`/data/dev/setup/base/holyC/ecs`, under "not started"). Once they land natively, they'll need
+their own binding pass.

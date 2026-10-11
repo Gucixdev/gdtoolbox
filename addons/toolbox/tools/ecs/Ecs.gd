@@ -7,6 +7,11 @@ extends Node
 ## several isolated simulations.
 
 var world: EcsWorld = EcsWorld.new()
+var events: EcsEventBus = EcsEventBus.new()
+var stats: EcsStats = null
+var gas: EcsGas = null
+var scheduler: EcsScheduler = null
+var streamer: EcsStreamer = null
 var _ids_by_script: Dictionary = {}
 
 func register(component_script: Script) -> int:
@@ -22,3 +27,31 @@ func register(component_script: Script) -> int:
 		id = world.register_component(comp_name, component_script.byte_size())
 	_ids_by_script[component_script] = id
 	return id
+
+## -- Optional native modules, created on first use ---------------------------------------
+## Not every game needs combat stats, abilities, a scheduler, or streaming - call the
+## matching ensure_*() once (EcsEntity's stats/gas helpers do this for you) and the shared
+## instance sticks around after. `events` itself is created eagerly since it's cheap and
+## generically useful as plain pub/sub glue even without the other modules.
+
+func ensure_stats(cfg: Dictionary = {}) -> EcsStats:
+	if stats == null:
+		stats = EcsStats.create(cfg, 0)
+		stats.attach_events(events)
+	return stats
+
+func ensure_gas() -> EcsGas:
+	if gas == null:
+		gas = EcsGas.create(ensure_stats(), events)
+	return gas
+
+func ensure_scheduler(fixed_dt: float = 1.0 / 60.0, max_steps: int = 5) -> EcsScheduler:
+	if scheduler == null:
+		scheduler = EcsScheduler.create(fixed_dt, max_steps)
+		scheduler.set_events(events)
+	return scheduler
+
+func ensure_streamer(cfg: Dictionary = {}) -> EcsStreamer:
+	if streamer == null:
+		streamer = EcsStreamer.create(cfg)
+	return streamer

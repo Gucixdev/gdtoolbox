@@ -6,6 +6,11 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include "ecs_events.h"
+#include "ecs_gas_wrap.h"
+#include "ecs_scheduler.h"
+#include "ecs_stats_wrap.h"
+#include "ecs_streamer.h"
 #include "ecs_view.h"
 #include "ecs_world.h"
 
@@ -17,6 +22,11 @@ void initialize_ecs_module(ModuleInitializationLevel p_level) {
 	}
 	GDREGISTER_CLASS(EcsView);
 	GDREGISTER_CLASS(EcsWorld);
+	GDREGISTER_CLASS(EcsEventBus);
+	GDREGISTER_CLASS(EcsStats);
+	GDREGISTER_CLASS(EcsGas);
+	GDREGISTER_CLASS(EcsScheduler);
+	GDREGISTER_CLASS(EcsStreamer);
 }
 
 void uninitialize_ecs_module(ModuleInitializationLevel p_level) {
