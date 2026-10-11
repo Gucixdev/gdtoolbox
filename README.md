@@ -31,8 +31,13 @@ auto-discovery mechanism — some are own tools, several are third-party
   docks (Godot 4.7 `EditorDock`), including the Toolbox dock itself.
 - **ezanim** — `AnimPlayer`: one node for fades, pops, slides, wiggles
   (replaces the old separate `EzAnim`/`EzAnimPlayer`/`UIAnim`).
-- **ezmaterials** — shader material system with matcap, PBR, phong, voronoi,
-  opal, and POM shading.
+- **mats** — `Mat`: shader material node (matcap/PBR layers over one uber-shader),
+  with per-surface override (`surface_idx`) for multi-material meshes. Also ships
+  standalone derivative shaders: POM, triplanar PBR, dissolve, outline, SSAO post.
+- **ecs** — archetype-table ECS: a GDExtension binding (`EcsWorld`/`EcsView`) over
+  a native C core, plus a thin GDScript layer (`EcsEntity`/`EcsComponent`/`EcsSystem`,
+  behind the autoload `Ecs`) — bulk per-table iteration instead of SceneTree-group
+  scans. Linux debug binary only for now.
 - **ezdialogue** — `DialogueSystem`: plays a `DialogueGraph` resource
   (`start()`/`advance()`/`choose()`, `line`/`choices` signals, branches and
   quests via `DialogueNode`/`DialogueChoice`).
@@ -67,8 +72,6 @@ auto-discovery mechanism — some are own tools, several are third-party
 - **inspector_tabs** by PiCode — splits the Inspector's property classes into
   their own tabs.
 - **mesh_inspector** by @Gamehooe — shows stats about the selected mesh.
-- **godot_3d_cursor** by Marco (license included) — Blender-style 3D cursor
-  (Shift+Right Click to place, Shift+S for the pie menu).
 - **dev-console** by cherttov (license included) — in-game developer console
   to run/output in-game commands.
 - **tnowe_extra_controls** by Don Tnowe — folded into `ezui/utils/` as
