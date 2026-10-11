@@ -168,7 +168,8 @@ stats), `EcsGas` (`ecs_gas.h`, tags/effects/abilities) and `EcsScheduler` (`ecs_
 phase/fixed-timestep scheduling), plus `EcsStreamer` (`ecs_stream.h`, distance-driven asset/cell
 streaming). `ecs_dynamics.h` is deliberately not bound here - it stays native-only.
 
-Query caching, relationships, hierarchies and change-detection are **not gaps in this binding** -
-they don't exist in the native core yet either (see its own `ROADMAP.md` at
-`/data/dev/setup/base/holyC/ecs`, under "not started"). Once they land natively, they'll need
-their own binding pass.
+Relationships, hierarchies and change-detection are **not gaps in this binding** - they don't
+exist in the native core yet either (see its own `ROADMAP.md` at `/data/dev/setup/base/holyC/ecs`,
+under "not started"). Once they land natively, they'll need their own binding pass. Query caching
+does exist natively (`ecs_query`) but isn't exposed through this binding yet - `EcsView` only
+wraps the one-shot `ecs_view`.
