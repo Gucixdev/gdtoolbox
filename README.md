@@ -37,7 +37,8 @@ auto-discovery mechanism — some are own tools, several are third-party
 - **ecs** — archetype-table ECS: a GDExtension binding (`EcsWorld`/`EcsView`) over
   a native C core, plus a thin GDScript layer (`EcsEntity`/`EcsComponent`/`EcsSystem`,
   behind the autoload `Ecs`) — bulk per-table iteration instead of SceneTree-group
-  scans. Linux debug binary only for now.
+  scans. Own `README.md` inside the tool folder. Ships Linux x86_64 debug AND release
+  binaries; other platforms/arches aren't built yet.
 - **ezdialogue** — `DialogueSystem`: plays a `DialogueGraph` resource
   (`start()`/`advance()`/`choose()`, `line`/`choices` signals, branches and
   quests via `DialogueNode`/`DialogueChoice`).
